@@ -7,10 +7,12 @@
 // SELECT 0 FROM generate_series(1, 20);
 
 import express from "express";
-import pg from "pg";
+import pool from "./db/index.js";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import auth from "./middleware/authMiddleware.js";
+import authRoute from "./auth/authRoute.js"
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -20,20 +22,14 @@ const port = process.env.PORT || 8080;
 // Pool is nothing but group of connections
 // If you pick one connection out of the pool and release it
 // the pooler will keep that connection open for sometime to other clients to reuse
-const pool = new pg.Pool({
-  host: "localhost",
-  port: 5433,
-  user: "postgres",
-  password: "postgres",
-  database: "sql_class_2_db",
-  max: 20,
-  connectionTimeoutMillis: 0,
-  idleTimeoutMillis: 0,
-});
+
 
 const app = new express();
 app.use(cors());
 
+app.use(express.json());
+
+app.use("/api/auth",authRoute);
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
@@ -45,7 +41,7 @@ app.get("/seats", async (req, res) => {
 
 //book a seat give the seatId and your name
 
-app.put("/:id/:name", async (req, res) => {
+app.put("/:id/:name",auth, async (req, res) => {
   try {
     const id = req.params.id;
     const name = req.params.name;
